@@ -41,11 +41,94 @@ Perfect for robotics students and researchers working on object manipulation and
 
 ---
 
+## 💻 Windows Setup Guide (Conda Installation)
+
+### Step 1: Install Miniconda/Anaconda
+
+**Option A: Miniconda (Recommended - Lighter)**
+1. Download Miniconda for Windows from: https://docs.conda.io/en/latest/miniconda.html
+2. Choose "Miniconda3 Windows 64-bit" installer
+3. Run the installer (.exe file)
+4. **Important:** Check "Add Anaconda to my PATH environment variable" during installation
+5. Complete the installation
+
+**Option B: Anaconda (Full Package)**
+1. Download from: https://www.anaconda.com/download
+2. Run the installer
+3. Follow the installation wizard
+
+### Step 2: Verify Installation
+
+Open **Command Prompt** or **Anaconda Prompt** and test:
+```bash
+conda --version
+# Should show: conda 23.x.x or similar
+```
+
+If you get an error:
+1. Close and reopen Command Prompt
+2. Or search for "Anaconda Prompt" in Windows Start Menu and use that instead
+
+### Step 3: Update Conda (Optional but Recommended)
+```bash
+conda update conda
+```
+
+### Step 4: Common Windows Issues
+
+**Issue: "conda is not recognized"**
+- Use **Anaconda Prompt** instead of regular Command Prompt
+- Or add conda to PATH:
+  1. Search "Environment Variables" in Windows
+  2. Edit "Path" variable
+  3. Add: `C:\Users\YourUsername\miniconda3\Scripts`
+  4. Add: `C:\Users\YourUsername\miniconda3\Library\bin`
+
+**Issue: Permission Denied**
+- Run Command Prompt or Anaconda Prompt as Administrator
+- Right-click → "Run as administrator"
+
+**Issue: Slow conda commands**
+```bash
+# Use faster libmamba solver
+conda install -n base conda-libmamba-solver
+conda config --set solver libmamba
+```
+
+---
+
 ## 🚀 Quick Start
 
 ### 1. Installation
 
+**For Windows Users:**
 ```bash
+# Open Anaconda Prompt (NOT regular Command Prompt)
+# Navigate to your project directory
+cd C:\path\to\your\folder
+
+# Clone the repository
+git clone <your-repo-url>
+cd Detect
+
+# Create conda virtual environment
+conda create -n robot_vision python=3.11
+# Press 'y' when asked to proceed
+
+# Activate environment
+conda activate robot_vision
+# You should see (robot_vision) in your prompt
+
+# Install dependencies
+pip install -r requirements.txt
+# This may take 5-10 minutes - be patient!
+```
+
+**For Linux/Mac Users:**
+```bash
+# Open Terminal
+cd /path/to/your/folder
+
 # Clone the repository
 git clone <your-repo-url>
 cd Detect
@@ -190,88 +273,6 @@ detection:
 
 ---
 
-## 🔧 Advanced Usage
-
-### Customize Object Spawning
-```python
-# Spawn objects at specific distances and angles
-env.spawn_object('cube', position=[1.0, 0.5, 0.4])
-env.spawn_object('sphere', position=[1.5, -0.3, 0.3])
-```
-
-### Access Detailed Results
-```python
-result = vision.detect_and_measure()
-
-for det in result['detections']:
-    print(f"Class: {det['class_name']}")
-    print(f"Confidence: {det['confidence']:.2%}")
-    print(f"Distance: {det['distance']:.3f}m")
-    print(f"Position: {det['position']}")  # [x, y, z]
-    print(f"BBox: {det['bbox']}")  # [x, y, w, h] in pixels
-```
-
-### Visualize Detections
-```python
-import cv2
-
-result = vision.detect_and_measure()
-vis_image = vision.visualize(result)
-
-cv2.imshow("Detections", cv2.cvtColor(vis_image, cv2.COLOR_RGB2BGR))
-cv2.waitKey(0)
-```
-
----
-
-## 📝 API Reference
-
-### VisionSystem Class
-
-**Main Methods:**
-
-```python
-# Initialize vision system
-vision = VisionSystem(camera, model_path="weights/best.pt")
-
-# Run detection and measurement
-result = vision.detect_and_measure()
-# Returns: {
-#   'detections': [...],      # List of detected objects
-#   'rgb_image': ndarray,     # Original RGB image
-#   'depth_image': ndarray,   # Depth buffer
-#   'num_detections': int,    # Number of objects found
-#   'processing_time': float  # Time taken (seconds)
-# }
-
-# Create visualization
-vis_image = vision.visualize(result)
-
-# Get system performance
-fps = vision.get_fps()
-detector_fps = vision.get_detector_fps()
-```
-
-### Detection Dictionary Format
-
-Each detection contains:
-```python
-{
-    'class_id': 0,                    # 0=cube, 1=sphere, 2=cylinder
-    'class_name': 'cube',             # Object type
-    'confidence': 0.95,               # Detection confidence (0-1)
-    'bbox': [x, y, w, h],            # Bounding box in pixels
-    'center': [cx, cy],              # Center point in pixels
-    'distance': 1.234,               # Distance from camera (meters)
-    'distance_std': 0.023,           # Distance uncertainty
-    'position': [x, y, z],           # 3D position in world frame
-    'position_camera': [x, y, z],    # 3D position in camera frame
-    'position_confidence': 0.85      # Position confidence (0-1)
-}
-```
-
----
-
 ## 🧪 Testing
 
 ### Run Full Test Suite
@@ -306,45 +307,43 @@ Distance Estimation:
 
 ---
 
-## 🐛 Troubleshooting
+## 💡 Quick Tips for Windows Users
 
-### Common Issues
-
-**1. "ModuleNotFoundError: No module named 'src'"**
+### Running Scripts
+Always use **Anaconda Prompt** and make sure environment is activated:
 ```bash
-# Make sure you're running from project root
-cd Detect
+# Check if environment is active (you should see it in prompt)
+# Correct: (robot_vision) C:\Users\YourName\Detect>
+# Wrong:   C:\Users\YourName\Detect>
+
+# If not active, activate it:
+conda activate robot_vision
+
+# Then run scripts:
+python scripts\test_detection.py
+python scripts\test_path.py
+```
+
+### File Paths on Windows
+Use backslashes `\` or forward slashes `/`:
+```bash
+# Both work on Windows:
+python scripts\test_detection.py
 python scripts/test_detection.py
 ```
 
-**2. "Cannot find trained model"**
+### Common Shortcuts
+- `Ctrl + C`: Stop running script
+- `cls`: Clear terminal screen
+- `dir`: List files (instead of `ls`)
+- `cd ..`: Go up one directory
+
+### GPU Support (Optional - for faster training)
+If you have NVIDIA GPU:
 ```bash
-# Check if weights/best.pt exists
-ls weights/best.pt
-
-# If missing, train a new model or use pretrained YOLOv8
-```
-
-**3. Objects not detected**
-- Check if objects are in camera view (0.8m - 1.8m range)
-- Verify camera position in config.yaml
-- Ensure lighting is adequate in simulation
-
-**4. Poor distance accuracy**
-- Objects too close (<0.7m) or too far (>2.0m)
-- Adjust `spawning.distances` in config.yaml
-- Check depth buffer visualization
-
-**5. Conda environment issues**
-```bash
-# Make sure conda environment is activated
-conda activate robot_vision
-
-# Verify Python version
-python --version  # Should be 3.11.x
-
-# Reinstall dependencies if needed
-pip install -r requirements.txt --force-reinstall
+# Install CUDA-enabled PyTorch
+pip uninstall torch torchvision
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
 ```
 
 ---
@@ -414,44 +413,14 @@ conda deactivate
 conda env remove -n robot_vision
 ```
 
----
 
-## 🤝 Contributing
-
-This is a personal project, but feel free to:
-- Report bugs or issues
-- Suggest improvements
-- Fork and modify for your needs
-- Share your results!
-
----
-
-## 📄 License
-
-[Add your license here - MIT, Apache 2.0, etc.]
-
----
 
 ## 👨‍💻 Author
 
 Created for robotics research and education. Trained on 2000 synthetic images generated in PyBullet simulation.
+By THU HTOO ZAW, THIRI TOE TOE ZIN
 
 ---
 
-## 🙏 Acknowledgments
 
-- **YOLOv8** by Ultralytics for object detection
-- **PyBullet** for physics simulation
-- **PyTorch** for deep learning framework
 
----
-
-## 📧 Contact
-
-For questions or collaboration:
-- GitHub: [Your GitHub]
-- Email: [Your Email]
-
----
-
-**Happy Robot Vision!** 🤖👁️✨s
