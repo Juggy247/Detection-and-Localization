@@ -418,23 +418,9 @@ conda env remove -n robot_vision
 ## 👨‍💻 Author
 
 Created for robotics research and education. Trained on 2000 synthetic images generated in PyBullet simulation.
+By THU HTOO ZAW, THIRI TOE TOE ZIN
 
 ---
 
-## 🙏 Acknowledgments
 
-- **YOLOv8** by Ultralytics for object detection
-- **PyBullet** for physics simulation
-- **PyTorch** for deep learning framework
 
----
-
-## 📧 Contact
-
-For questions or collaboration:
-- GitHub: [Your GitHub]
-- Email: [Your Email]
-
----
-
-**Happy Robot Vision!** 🤖👁️✨
