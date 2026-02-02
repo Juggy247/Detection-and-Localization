@@ -1,8 +1,3 @@
-"""
-Test script to verify X-Y coordinates for path planning
-Run this to make sure everything works before giving to your friend
-"""
-
 import sys
 sys.path.append('src')
 

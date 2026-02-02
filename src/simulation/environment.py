@@ -7,16 +7,10 @@ import math
 import random
 
 class RobotEnvironment:
-    """Manages PyBullet simulation environment"""
+    
     
     def __init__(self, config_path="config/config.yaml", gui=True):
-        """
-        Initialize PyBullet environment
         
-        Args:
-            config_path: Path to configuration file
-            gui: Whether to show GUI (True) or run headless (False)
-        """
         self.config = self._load_config(config_path)
         self.gui = gui
         
@@ -59,15 +53,12 @@ class RobotEnvironment:
         print(f"  Angle range: {min(self.spawn_angles)}° - {max(self.spawn_angles)}°")
     
     def _load_config(self, config_path):
-        """Load configuration from YAML file"""
+        
         with open(config_path, 'r') as f:
             return yaml.safe_load(f)
     
     def _compute_camera_frame(self):
-        """
-        Compute camera coordinate frame vectors
-        Matches the calculation in generate_dataset.py
-        """
+        
         # Forward vector (camera looking direction)
         forward = self.cam_target - self.cam_pos
         self.forward = forward / np.linalg.norm(forward)
@@ -86,10 +77,7 @@ class RobotEnvironment:
         print(f"    Up: {self.up}")
     
     def _random_position_world_planar(self, object_type):
-        """
-        Spawn objects on the ground using planar distance + angle.
-        World space, not camera space.
-        """
+        
         import math
         import random
 
@@ -130,17 +118,7 @@ class RobotEnvironment:
         ]
 
     def spawn_object(self, object_type, position=None, orientation=None):
-        """
-        Spawn an object in the environment
-        
-        Args:
-            object_type: One of 'cube', 'sphere', 'cylinder', 'pyramid', 'box'
-            position: [x, y, z] in meters, camera-relative random if None
-            orientation: Quaternion [x,y,z,w], default if None
-        
-        Returns:
-            object_id: PyBullet object ID
-        """
+       
         if object_type not in self.config['objects']:
             raise ValueError(f"Unknown object type: {object_type}")
         
@@ -255,12 +233,7 @@ class RobotEnvironment:
         return obj_id
     
     def _random_position_camera_relative(self):
-        """
-        FIXED: Generate position with validation
-        
-        Returns:
-            [x, y, z] position in world frame
-        """
+
         # Use spawning ranges from config
         distance = np.random.choice(self.spawn_distances)
         angle_deg = np.random.choice(self.spawn_angles)
@@ -290,10 +263,7 @@ class RobotEnvironment:
         return position.tolist()
     
     def _random_position(self):
-        """
-        DEPRECATED: Old world-frame spawning (kept for compatibility)
-        Use _random_position_camera_relative() instead
-        """
+       
         print("⚠ WARNING: Using deprecated world-frame spawning!")
         print("  Use _random_position_camera_relative() for camera-aligned spawning")
         x = np.random.uniform(0.5, 4.0)
@@ -302,14 +272,7 @@ class RobotEnvironment:
         return [x, y, z]
     
     def spawn_random_scene(self, num_each_type=1, settle_steps=100, min_separation=0.4):
-        """
-        Spawn random scene with collision avoidance
         
-        Args:
-            num_each_type: Number of each object type to spawn
-            settle_steps: Number of simulation steps to let objects settle
-            min_separation: Minimum distance between objects (meters)
-        """
         object_types = list(self.config['objects'].keys())
         
         print(f"\nSpawning scene with {num_each_type} of each object type...")
@@ -374,7 +337,6 @@ class RobotEnvironment:
             distance = np.linalg.norm(pos - self.cam_pos)
             distances.append(distance)
             
-            # Calculate angle from camera forward direction
             to_object = pos - self.cam_pos
             to_object_normalized = to_object / np.linalg.norm(to_object)
             angle_rad = np.arctan2(np.dot(to_object_normalized, self.right),
@@ -390,15 +352,7 @@ class RobotEnvironment:
         print(f"    Height above ground: {min(heights):.2f}m - {max(heights):.2f}m (mean: {np.mean(heights):.2f}m)")
     
     def get_object_ground_truth(self, obj_id):
-        """
-        Get ground truth position of object
-        
-        Args:
-            obj_id: PyBullet object ID
-        
-        Returns:
-            dict with position, orientation, type
-        """
+       
         if obj_id not in self.objects:
             return None
         
@@ -428,7 +382,7 @@ class RobotEnvironment:
         p.stepSimulation()
     
     def reset(self):
-        """Reset environment - remove ALL bodies except plane"""
+       
         # Get all body IDs
         num_bodies = p.getNumBodies()
         

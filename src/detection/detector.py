@@ -1,8 +1,3 @@
-"""
-Object Detector
-Wraps YOLO for object detection inference
-"""
-
 from ultralytics import YOLO
 import numpy as np
 import cv2
@@ -12,16 +7,9 @@ import time
 
 
 class ObjectDetector:
-    """YOLO-based object detector"""
     
     def __init__(self, model_path=None, config_path="config/config.yaml"):
-        """
-        Initialize detector
         
-        Args:
-            model_path: Path to trained model weights
-            config_path: Path to configuration file
-        """
         with open(config_path, 'r') as f:
             self.config = yaml.safe_load(f)
         
@@ -56,20 +44,7 @@ class ObjectDetector:
         print(f"  Classes: {self.class_names}")
     
     def detect(self, image):
-        """
-        Detect objects in image
-        
-        Args:
-            image: RGB image (numpy array)
-        
-        Returns:
-            List of detections, each dict with:
-                - class_id: int
-                - class_name: str
-                - confidence: float
-                - bbox: [x, y, w, h] in pixels
-                - center: [cx, cy] in pixels
-        """
+
         start_time = time.time()
         
         # Run inference
@@ -136,7 +111,7 @@ class ObjectDetector:
         return detections
     
     def get_fps(self):
-        """Get average FPS from recent inferences"""
+       
         if len(self.inference_times) == 0:
             return 0.0
         
@@ -144,23 +119,14 @@ class ObjectDetector:
         return 1.0 / avg_time if avg_time > 0 else 0.0
     
     def get_avg_inference_time(self):
-        """Get average inference time in milliseconds"""
+       
         if len(self.inference_times) == 0:
             return 0.0
         
         return np.mean(self.inference_times) * 1000  # Convert to ms
     
     def visualize_detections(self, image, detections):
-        """
-        Draw bounding boxes and labels on image
-        
-        Args:
-            image: RGB image
-            detections: List of detection dicts
-        
-        Returns:
-            Image with visualizations
-        """
+       
         vis_image = image.copy()
         
         # Define colors for each class

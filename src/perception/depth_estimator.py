@@ -20,21 +20,7 @@ class DepthEstimator:
         print(f"  Range: {self.min_range}m - {self.max_range}m")
     
     def estimate_distance(self, detection, depth_image):
-        """
-        Estimate distance to detected object with improved robustness
         
-        Args:
-            detection: Detection dict with 'bbox' key
-            depth_image: Depth image (H x W) in meters
-        
-        Returns:
-            dict with:
-                - distance: float (meters)
-                - valid: bool
-                - method: str
-                - std_dev: float
-                - reason: str (if invalid)
-        """
         bbox = detection['bbox']
         x, y, w, h = bbox
         
@@ -81,7 +67,7 @@ class DepthEstimator:
                 'reason': 'empty_roi'
             }
         
-        # Filter outliers (keep only depths in valid range)
+        
         valid_depths = depth_roi[
             (depth_roi >= self.min_range) & 
             (depth_roi <= self.max_range) &
@@ -97,19 +83,17 @@ class DepthEstimator:
                 'reason': 'no_valid_depths'
             }
         
-        # Calculate statistics using median (robust to outliers)
+
         median_depth = np.median(valid_depths)
         std_depth = np.std(valid_depths)
         
-        # Adaptive validation: std should be < 15% of distance
-        # This is more lenient for far objects, stricter for near ones
+        
         max_allowed_std = max(median_depth * 0.2, 0.08)
-        # Adaptive validation: std should be < 15% of distance
-        # This is more lenient for far objects, stricter for near ones
+       
         max_allowed_std = max(median_depth * 0.12, 0.05)  # At least 5cm tolerance
         valid = std_depth < max_allowed_std
 
-        # Additional validation: need enough valid pixels for confidence
+       
         min_valid_pixels = 10
         if len(valid_depths) < min_valid_pixels:
             valid = False
@@ -124,17 +108,7 @@ class DepthEstimator:
         }
     
     def estimate_distance_geometric(self, detection, real_size, focal_length):
-        """
-        Fallback: Estimate distance using geometry (if depth not available)
-        
-        Args:
-            detection: Detection dict
-            real_size: Real-world size of object (meters)
-            focal_length: Camera focal length (pixels)
-        
-        Returns:
-            Distance in meters
-        """
+       
         bbox = detection['bbox']
         bbox_width = bbox[2]
         
@@ -145,16 +119,10 @@ class DepthEstimator:
 
 
 class PositionCalculator:
-    """Calculates 3D position from detection and distance"""
+    
     
     def __init__(self, camera_intrinsics, config_path="config/config.yaml"):
-        """
-        Initialize position calculator
-        
-        Args:
-            camera_intrinsics: Dict with fx, fy, cx, cy
-            config_path: Path to config
-        """
+
         with open(config_path, 'r') as f:
             self.config = yaml.safe_load(f)
         
@@ -180,20 +148,7 @@ class PositionCalculator:
         print(f"  Camera position: {self.cam_pos}")
     
     def _compute_rotation_matrix(self):
-        """
-        Compute rotation matrix from camera frame to world frame
-        
-        Camera frame (OpenGL/PyBullet convention):
-            X: right
-            Y: up  
-            Z: backward (into the camera, negative of view direction)
-        
-        World frame:
-            X, Y, Z as defined in config
-        
-        Returns:
-            3x3 rotation matrix
-        """
+       
         # Forward vector (camera looking direction)
         forward = self.cam_target - self.cam_pos
         forward = forward / np.linalg.norm(forward)
@@ -206,10 +161,7 @@ class PositionCalculator:
         up = np.cross(right, forward)
         up = up / np.linalg.norm(up)
         
-        # Rotation matrix: columns are camera axes expressed in world frame
-        # Camera X-axis (right) -> right vector in world
-        # Camera Y-axis (up) -> up vector in world  
-        # Camera Z-axis (back) -> -forward vector in world
+    
         R = np.column_stack([right, up, -forward])
         
         print(f"  Camera rotation matrix computed:")
@@ -220,49 +172,27 @@ class PositionCalculator:
         return R
     
     def calculate_3d_position(self, detection, distance):
-        """
-        Calculate 3D position using proper coordinate transformation
-        
-        Args:
-            detection: Detection dict with 'center' key [cx_pixel, cy_pixel]
-            distance: Distance in meters (depth from camera)
-        
-        Returns:
-            dict with:
-                - position: [x, y, z] in world frame (meters)
-                - position_camera: [x, y, z] in camera frame
-                - confidence: float
-        """
+       
         cx_pixel, cy_pixel = detection['center']
         
         # Convert pixel coordinates to normalized image coordinates
         x_norm = (cx_pixel - self.cx) / self.fx
         y_norm = (cy_pixel - self.cy) / self.fy
         
-        # 3D point in camera frame
-        # In camera frame (OpenGL convention used by PyBullet):
-        #   X: right (positive = right of image center)
-        #   Y: up (positive = up from image center, NOTE: image Y is down!)
-        #   Z: backward (positive = into camera, so distance is negative Z)
         
         ray_dir_camera = np.array([
-            x_norm,      # Right offset
-            -y_norm,     # Up offset (negate because image Y is down)
-            -1.0         # Forward direction (-Z in camera space)
+            x_norm,      
+            -y_norm,     
+            -1.0         
         ])
         
-        # Normalize to unit vector
+       
         ray_dir_camera = ray_dir_camera / np.linalg.norm(ray_dir_camera)
-        
-        # Scale by distance to get 3D point in camera frame
-        # This gives us the point at 'distance' meters along the ray
+
         p_camera = ray_dir_camera * distance
-        
-        # Transform to world frame
-        # p_world = camera_position + R * p_camera
+
         p_world = self.cam_pos + self.R_cam_to_world @ p_camera
-        
-        # Estimate confidence based on distance and detection confidence
+ 
         confidence = self._estimate_confidence(detection, distance)
         
         return {
@@ -272,16 +202,7 @@ class PositionCalculator:
         }
     
     def _estimate_confidence(self, detection, distance):
-        """
-        Estimate position confidence based on detection confidence and distance
         
-        Args:
-            detection: Detection dict with 'confidence'
-            distance: Distance in meters
-        
-        Returns:
-            Confidence score (0-1)
-        """
         det_conf = detection['confidence']
         
         # Confidence decreases with distance (harder to localize far objects)
@@ -297,15 +218,7 @@ class PositionCalculator:
         return float(det_conf * dist_factor)
     
     def project_to_ground(self, position_3d):
-        """
-        Project 3D position onto ground plane
         
-        Args:
-            position_3d: [x, y, z] in world frame
-        
-        Returns:
-            [x, y, z_ground] - position on ground
-        """
         ground_height = self.position_config['ground_plane_height']
         return [position_3d[0], position_3d[1], ground_height]
     

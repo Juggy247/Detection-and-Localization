@@ -5,7 +5,7 @@ import yaml
 
 
 class Camera:
-    """PyBullet camera interface"""
+    
     
     def __init__(self, config_path="config/config.yaml"):
        
@@ -54,11 +54,7 @@ class Camera:
         )
     
     def _compute_focal_length(self):
-        """
-        Compute focal length in pixels
         
-        Formula: f = (image_width / 2) / tan(fov / 2)
-        """
         fov_rad = np.deg2rad(self.fov)
         focal_length = (self.width / 2) / np.tan(fov_rad / 2)
         return focal_length
@@ -142,27 +138,18 @@ class Camera:
         )
     
     def get_camera_intrinsics(self):
-        """
-        Get camera intrinsic parameters
         
-        Returns:
-            dict with camera parameters using standard naming:
-                - fx, fy: focal lengths in pixels
-                - cx, cy: principal point (image center)
-                - width, height: image dimensions
-                - K: 3x3 intrinsic matrix
-        """
         return {
-            'fx': self.focal_length,              # ← Changed from 'focal_length_x'
-            'fy': self.focal_length,              # ← Changed from 'focal_length_y'
-            'cx': self.width / 2,                 # ← Changed from 'principal_point_x'
-            'cy': self.height / 2,                # ← Changed from 'principal_point_y'
+            'fx': self.focal_length,             
+            'fy': self.focal_length,              
+            'cx': self.width / 2,                
+            'cy': self.height / 2,               
             'image_width': self.width,
             'image_height': self.height,
             'fov': self.fov,
             'near': self.near,
             'far': self.far,
-            'K': np.array([                       # ← Added intrinsic matrix
+            'K': np.array([                     
                 [self.focal_length, 0, self.width/2],
                 [0, self.focal_length, self.height/2],
                 [0, 0, 1]
@@ -171,13 +158,10 @@ class Camera:
     
     def visualize_depth(self, depth_image):
         
-        # Clip to reasonable range
         depth_clipped = np.clip(depth_image, 0, 10.0)
-        
-        # Normalize to 0-255
+
         depth_normalized = (depth_clipped / 10.0 * 255).astype(np.uint8)
-        
-        # Invert so closer = brighter
+
         depth_vis = 255 - depth_normalized
         
         return depth_vis
@@ -187,22 +171,19 @@ class Camera:
 if __name__ == "__main__":
     import pybullet_data
     
-    # Setup PyBullet
     p.connect(p.GUI)
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
     p.loadURDF("plane.urdf")
     
-    # Add some objects
     cube = p.loadURDF("cube.urdf", [1, 0, 0.5])
     p.changeVisualShape(cube, -1, rgbaColor=[1, 0, 0, 1])
     
     sphere = p.loadURDF("sphere2.urdf", [2, 0.5, 0.5])
     p.changeVisualShape(sphere, -1, rgbaColor=[0, 0, 1, 1])
     
-    # Create camera
+ 
     camera = Camera()
-    
-    # Get images
+
     print("\nCapturing images...")
     rgb, depth = camera.get_rgbd()
     
@@ -210,7 +191,6 @@ if __name__ == "__main__":
     print(f"Depth shape: {depth.shape}, dtype: {depth.dtype}")
     print(f"Depth range: {depth.min():.2f}m to {depth.max():.2f}m")
     
-    # Display
     cv2.imshow("RGB", cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR))
     cv2.imshow("Depth", camera.visualize_depth(depth))
     

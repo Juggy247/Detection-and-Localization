@@ -1,9 +1,3 @@
-"""
-Detection Testing Script - COMPLETE FIX
-Spawns random objects in camera view and tests detection accuracy
-Reports precision, recall, and distance accuracy
-"""
-
 import pybullet as p
 import numpy as np
 import cv2
@@ -13,7 +7,6 @@ import sys
 from pathlib import Path
 from collections import defaultdict
 
-# Add src to path
 sys.path.append('src')
 
 from simulation.environment import RobotEnvironment
@@ -21,7 +14,7 @@ from simulation.camera import Camera
 from vision_system import VisionSystem
 
 class DetectionTester:
-    """Test harness for vision system"""
+    """Test vision system"""
     
     def __init__(self, config_path="config/config.yaml"):
         with open(config_path, 'r') as f:
@@ -48,20 +41,7 @@ class DetectionTester:
         }
     
     def camera_to_world(self, p_cam):
-        """
-        Transform position from camera frame to world frame
-        
-        Camera coordinate system:
-          - Z-axis: forward (depth)
-          - X-axis: right
-          - Y-axis: down (need to negate for world up)
-        
-        Args:
-            p_cam: [x, y, z] in camera frame where z is depth
-        
-        Returns:
-            [x, y, z] in world frame
-        """
+       
         cam_pos = np.array(self.cam_position)
         cam_target = np.array(self.cam_target)
         cam_up = np.array(self.cam_up)
@@ -85,9 +65,7 @@ class DetectionTester:
         return world_pos
     
     def spawn_test_object(self, env, object_type, distance=None, angle=None, max_retries=5):
-        """
-        Spawn object with visibility validation
-        """
+       
         for retry in range(max_retries):
             if distance is None:
                 distance = np.random.choice(self.test_distances)
@@ -118,34 +96,28 @@ class DetectionTester:
                     distance * np.cos(angle_rad) * forward +
                     distance * np.sin(angle_rad) * right +
                     vertical_offset * up)
-            
-            # Ensure reasonable height
+          
             position[2] = np.clip(position[2], 0.3, 1.5)
             
-            # Validate actual distance
             actual_distance = np.linalg.norm(position - cam_pos)
             
-            # Accept if distance is reasonable
+           
             if 0.7 <= actual_distance <= 2.0:
                 break
             
-            # If last retry, use anyway but warn
             if retry == max_retries - 1:
                 print(f"    ⚠ Could not find ideal position, using distance={actual_distance:.2f}m")
         
-        # Spawn object
+       
         obj_id = env.spawn_object(object_type, position=position.tolist())
         
-        # Let it settle
         for _ in range(50):
             env.step()
-        
-        # Get actual position after settling
+
         ground_truth = env.get_object_ground_truth(obj_id)
         ground_truth['expected_distance'] = distance
         ground_truth['expected_angle'] = angle
-        
-        # Log actual vs expected
+
         actual_pos = ground_truth['position']
         actual_dist = np.linalg.norm(actual_pos - cam_pos)
         print(f"  Spawned {object_type}: expected {distance:.2f}m @ {angle}°, actual {actual_dist:.2f}m at {actual_pos}")
@@ -153,17 +125,7 @@ class DetectionTester:
         return ground_truth
     
     def match_detection_to_ground_truth(self, detection, ground_truth_list, match_threshold=1.0):
-        """
-        Match a detection to ground truth object
         
-        Args:
-            detection: Detection dict with 'position' in world coordinates
-            ground_truth_list: List of ground truth objects
-            match_threshold: Distance threshold for matching (meters)
-        
-        Returns:
-            Matched ground truth object or None
-        """
         det_pos = np.array(detection['position'])
         det_class = detection['class_name']
         
@@ -175,7 +137,7 @@ class DetectionTester:
             gt_class = gt['type']
             distance = np.linalg.norm(det_pos - gt_pos)
             
-            # Check class match and distance
+            
             if det_class == gt_class and distance < match_threshold:
                 if distance < best_distance:
                     best_match = gt
@@ -184,13 +146,7 @@ class DetectionTester:
         return best_match
     
     def evaluate_detections(self, detections, ground_truth_list):
-        """
-        Evaluate detections against ground truth
-        
-        Args:
-            detections: List of detection dicts
-            ground_truth_list: List of ground truth dicts
-        """
+     
         matched_gt = set()
         
         for det in detections:
@@ -214,24 +170,17 @@ class DetectionTester:
                 distance_error = abs(det_distance - gt_distance)
                 self.results['distance_errors'].append(distance_error)
             else:
-                # False positive
+                
                 self.results['false_positives'] += 1
                 self.results['by_class'][det['class_name']]['fp'] += 1
         
-        # Count false negatives (missed objects)
+        
         for gt in ground_truth_list:
             if gt['id'] not in matched_gt:
                 self.results['by_class'][gt['type']]['fn'] += 1
     
     def run_test(self, num_scenes=10, objects_per_scene=5, show_visualization=True):
-        """
-        Run detection test
         
-        Args:
-            num_scenes: Number of different scenes to test
-            objects_per_scene: Number of objects per scene
-            show_visualization: Whether to show visualization
-        """
         print("\n" + "="*70)
         print("DETECTION SYSTEM TEST")
         print("="*70)
@@ -256,7 +205,7 @@ class DetectionTester:
         print(f"Camera target: {self.cam_target}")
         
         print("\nLoading vision system...")
-        # Try to load trained model
+        
         model_path = Path("weights/best.pt")
         if not model_path.exists():
             print("⚠ Using pretrained YOLOv8n (no custom training)")
@@ -274,10 +223,8 @@ class DetectionTester:
         for scene_num in range(num_scenes):
             print(f"\n[Scene {scene_num + 1}/{num_scenes}]")
             
-            # Reset environment
             env.reset()
-            
-            # Spawn random objects IN CAMERA VIEW
+
             ground_truth_objects = []
             for i in range(objects_per_scene):
                 obj_type = np.random.choice(self.object_types)
@@ -286,22 +233,16 @@ class DetectionTester:
                 print(f"  Spawned {obj_type} at {gt['position']}")
             
             self.results['total_objects'] += len(ground_truth_objects)
-            
-            # Run detection
+
             result = vision.detect_and_measure()
             detections = result['detections']
-            
-            # Transform detections to world coordinates
-            
             
             print(f"  Detected {len(detections)} objects")
             for det in detections:
                 print(f"    {det['class_name']} at {det['position']} (conf: {det['confidence']:.2f})")
-            
-            # Evaluate
+
             self.evaluate_detections(detections, ground_truth_objects)
-            
-            # Visualization
+
             if show_visualization:
                 vis_image = vision.visualize(result)
                 cv2.imshow("Detection Test", cv2.cvtColor(vis_image, cv2.COLOR_RGB2BGR))

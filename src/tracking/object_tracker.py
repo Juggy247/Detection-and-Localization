@@ -1,8 +1,3 @@
-"""
-Object Tracking and Target Selection
-Maintains object state across frames and selects navigation targets
-"""
-
 import numpy as np
 import time
 import yaml
@@ -10,16 +5,10 @@ from collections import defaultdict
 
 
 class TrackedObject:
-    """Represents a tracked object across frames"""
+    
     
     def __init__(self, detection, obj_id):
-        """
-        Initialize tracked object
-        
-        Args:
-            detection: Initial detection dict
-            obj_id: Unique object ID
-        """
+       
         self.id = obj_id
         self.class_id = detection['class_id']
         self.class_name = detection['class_name']
@@ -58,11 +47,11 @@ class TrackedObject:
         self.times_seen += 1
     
     def time_since_seen(self):
-        """Get time since last seen in seconds"""
+        
         return time.time() - self.last_seen
     
     def is_valid(self, min_sightings=3, lost_timeout=2.0):
-        """Check if object is valid for tracking"""
+        
         if self.status == 'lost':
             return False
         if self.times_seen < min_sightings:
@@ -111,15 +100,7 @@ class ObjectTracker:
         print(f"  Matching threshold: {self.matching_threshold}m")
     
     def update(self, detections):
-        """
-        Update tracker with new detections
         
-        Args:
-            detections: List of detection dicts (with position info)
-        
-        Returns:
-            List of tracked objects
-        """
         # Mark all as not seen this frame
         for obj in self.objects.values():
             if obj.status != 'visited' and obj.time_since_seen() > self.lost_timeout:
@@ -145,12 +126,12 @@ class ObjectTracker:
                     best_distance = dist
                     best_match_id = obj_id
             
-            # Update existing or create new
+          
             if best_match_id is not None:
                 self.objects[best_match_id].update(detection)
                 matched_ids.add(best_match_id)
             else:
-                # Create new tracked object
+               
                 new_id = f"obj_{self.next_id}"
                 self.next_id += 1
                 self.objects[new_id] = TrackedObject(detection, new_id)
@@ -221,16 +202,7 @@ class TargetSelector:
         print(f"  Strategy: {self.strategy}")
     
     def select_target(self, tracked_objects, robot_position=None):
-        """
-        Select target object to navigate to
         
-        Args:
-            tracked_objects: List of TrackedObject instances
-            robot_position: Current robot position [x, y, z] (optional)
-        
-        Returns:
-            TrackedObject or None
-        """
         # Filter valid candidates
         candidates = [
             obj for obj in tracked_objects
@@ -308,16 +280,7 @@ class TargetSelector:
         return self._select_nearest(candidates)
     
     def check_target_reached(self, target, robot_position):
-        """
-        Check if target has been reached
         
-        Args:
-            target: TrackedObject
-            robot_position: Current robot position [x, y, z]
-        
-        Returns:
-            bool: True if target reached and held
-        """
         if target is None or robot_position is None:
             return False
         
@@ -354,12 +317,7 @@ class TargetSelector:
         self.reached_hold_start = None
     
     def get_mission_status(self, tracked_objects):
-        """
-        Get overall mission status
         
-        Returns:
-            dict with total, visited, remaining, complete
-        """
         all_objects = [
             obj for obj in tracked_objects
             if obj.times_seen >= self.config['tracking']['min_sightings']

@@ -13,25 +13,10 @@ from perception.depth_estimator import DepthEstimator, PositionCalculator
 
 
 class VisionSystem:
-    """
-    Simplified vision system for object detection and distance estimation
     
-    This system:
-    - Detects objects using YOLO
-    - Estimates distance using depth buffer
-    - Calculates 3D positions
-    - Returns all detections with their positions and distances
-    """
     
     def __init__(self, camera, model_path=None, config_path="config/config.yaml"):
-        """
-        Initialize vision system
-        
-        Args:
-            camera: Camera object (from simulation.camera)
-            model_path: Path to trained YOLO model (optional)
-            config_path: Path to configuration file
-        """
+       
         print("\n" + "="*60)
         print("INITIALIZING VISION SYSTEM")
         print("="*60)
@@ -61,17 +46,7 @@ class VisionSystem:
         print("="*60)
     
     def detect_and_measure(self):
-        """
-        Main detection loop - call this to get all detections with distances
         
-        Returns:
-            dict with:
-                - detections: list of detection dicts with distance and position
-                - rgb_image: original RGB image
-                - depth_image: depth image
-                - num_detections: number of objects detected
-                - processing_time: time taken in seconds
-        """
         start_time = time.time()
         
         # 1. Capture RGB, depth, segmentation
@@ -146,15 +121,7 @@ class VisionSystem:
         return self.detector.get_fps()
     
     def visualize(self, result):
-        """
-        Create visualization of detections
         
-        Args:
-            result: Result dict from detect_and_measure()
-        
-        Returns:
-            Visualization image with bounding boxes and distance labels
-        """
         rgb_image = result['rgb_image']
         detections = result['detections']
         
@@ -182,7 +149,6 @@ class VisionSystem:
             # Draw box
             cv2.rectangle(vis_image, (x1, y1), (x2, y2), color, 2)
             
-            # Draw label with distance
             label = f"{det['class_name']}: {det['confidence']:.2f}"
             distance_label = f"Dist: {det['distance']:.2f}m"
             
@@ -237,7 +203,7 @@ class VisionSystem:
         return vis_image
     
     def print_detections(self, detections):
-        """Print detection results in a nice format"""
+        
         if len(detections) == 0:
             print("No objects detected")
             return
@@ -291,17 +257,7 @@ class VisionSystem:
         return inter_area / union_area if union_area > 0 else 0
 
     def _suppress_duplicates(self, detections, iou_threshold=0.5):
-        """
-        Remove duplicate detections of the same object
-        Keeps the detection with highest confidence
-        
-        Args:
-            detections: List of detection dicts
-            iou_threshold: IoU threshold for considering boxes duplicates
-        
-        Returns:
-            Filtered list of detections
-        """
+       
         if len(detections) <= 1:
             return detections
         
@@ -314,7 +270,7 @@ class VisionSystem:
             is_duplicate = False
             
             for kept_det in keep:
-                # Only suppress if same class AND high overlap
+               
                 if det['class_name'] == kept_det['class_name']:
                     iou = self._compute_iou(det['bbox'], kept_det['bbox'])
                     
@@ -329,9 +285,7 @@ class VisionSystem:
 
 # Example usage
 if __name__ == "__main__":
-    """
-    Simple example showing how to use the vision system
-    """
+   
     import pybullet as p
     import pybullet_data
     from simulation.environment import RobotEnvironment
